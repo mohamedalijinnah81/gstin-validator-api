@@ -43,21 +43,24 @@ const stateCodes = {
 const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 
 function isValidGSTIN(gstin) {
-  if (!GSTIN_REGEX.test(gstin)) return false;
-  const gstinChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  let factor = 2;
-  let sum = 0;
-
-  for (let i = 13; i >= 0; i--) {
-    const codePoint = gstinChars.indexOf(gstin[i]);
-    let product = factor * codePoint;
-    factor = (factor === 2) ? 1 : 2;
-    product = Math.floor(product / 36) + (product % 36);
-    sum += product;
+  if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin)) {
+    return false;
   }
 
-  const checksumChar = gstinChars[(36 - (sum % 36)) % 36];
-  return gstin[14] === checksumChar;
+  const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const factor = [1, 2]; // Alternating factors
+  let sum = 0;
+
+  for (let i = 0; i < 14; i++) {
+    const codePoint = chars.indexOf(gstin[i]);
+    const product = codePoint * factor[i % 2];
+    sum += Math.floor(product / 36) + (product % 36);
+  }
+
+  const checkCodePoint = (36 - (sum % 36)) % 36;
+  const expectedChecksum = chars[checkCodePoint];
+
+  return gstin[14] === expectedChecksum;
 }
 
 export default function handler(req, res) {
